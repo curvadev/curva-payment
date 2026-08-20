@@ -17,35 +17,31 @@ jobs:
         run: |
           unzip -q Curva.zip -d project_source
 
-      # KEMBALI MENGGUNAKAN JAVA 17 AGAR MESIN GRADLE BISA BERJALAN
-      - name: Setup Java JDK 17
+      - name: Setup Java JDK 11 (Stabil untuk AIDE)
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Setup Mesin Gradle (Versi Klasik)
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '6.8.3'
 
       - name: Perbaiki Kode Lawas & Build APK
         run: |
           cd project_source
-          # Mencari letak file build.gradle di dalam zip
+          # Mencari letak folder utama proyek di dalam zip
           GRADLE_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
-          cd $GRADLE_DIR
+          cd "$GRADLE_DIR"
           
-          # 1. Memaksa minSdk menjadi 24
-          if [ -f "app/build.gradle" ]; then
-            sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' app/build.gradle
-          else
-            sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' build.gradle
-          fi
+          echo "Memperbaiki minSdkVersion..."
+          find . -name "build.gradle" -exec sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' {} +
+          
+          echo "Mengganti jcenter menjadi mavenCentral..."
+          find . -name "*.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
 
-          # 2. Ganti jcenter() yang sudah mati menjadi mavenCentral()
-          find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
-          find . -name "settings.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
-
-          # 3. Memulai proses build menjadi APK
+          echo "Memulai proses build..."
           gradle assembleDebug
 
       - name: Upload Hasil APK
