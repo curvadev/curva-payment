@@ -28,13 +28,11 @@ jobs:
         with:
           gradle-version: '6.8.3'
 
-      - name: Tambal Kode AIDE Secara Paksa (Ultimate)
+      - name: Tambal Kode AIDE Secara Paksa (Ultimate V3)
         run: |
-          # Masuk ke folder Curva di dalam zip
           cd project_source/Curva || cd project_source/*
           
           echo "1. Memasang Plugin Google Services di Root..."
-          # Menulis paksa alamat unduh ke file utama
           cat <<EOF > new_root.gradle
           buildscript {
               repositories {
@@ -59,25 +57,23 @@ jobs:
           fi
           mv new_root.gradle build.gradle
           
-          echo "2. Memasang Versi SDK di App..."
-          APP_GRADLE="app/build.gradle"
-          sed -i 's/jcenter()/mavenCentral()/g' $APP_GRADLE
+          echo "2. Menimpa Versi SDK menjadi Android 13..."
+          APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
+          if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
-          # Jika compileSdk tidak ada, selipkan tepat di bawah 'android {'
-          if ! grep -q "compileSdkVersion" $APP_GRADLE; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 34\n/g' $APP_GRADLE
+          sed -i 's/jcenter()/mavenCentral()/g' "$APP_GRADLE"
+          
+          # Cari angka versi AIDE yang lawas dan timpa paksa dengan versi 33 (Android 13)
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 33/g' "$APP_GRADLE"
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 33/g' "$APP_GRADLE"
+          sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
+          
+          # Jika kebetulan barisnya tidak ada sama sekali, buatkan baris baru
+          if ! grep -q "compileSdkVersion" "$APP_GRADLE"; then
+              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 33\n/g' "$APP_GRADLE"
           fi
-          
-          # Jika blok defaultConfig tidak ada, buat baru untuk minSdk 24
-          if ! grep -q "defaultConfig" $APP_GRADLE; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 34\n    }\n/g' $APP_GRADLE
-          else
-              # Jika ada, ganti angkanya saja
-              if ! grep -q "minSdkVersion" $APP_GRADLE; then
-                  sed -i -E 's/defaultConfig[[:space:]]*\{/defaultConfig {\n        minSdkVersion 24\n/g' $APP_GRADLE
-              else
-                  sed -i -E 's/minSdkVersion.*/minSdkVersion 24/g' $APP_GRADLE
-              fi
+          if ! grep -q "minSdkVersion" "$APP_GRADLE"; then
+              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 33\n    }\n/g' "$APP_GRADLE"
           fi
 
       - name: Kompilasi APK (Build)
