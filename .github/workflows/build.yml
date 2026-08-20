@@ -17,53 +17,76 @@ jobs:
         run: |
           unzip -q Curva.zip -d project_source
 
-      - name: Setup Java JDK 11 (Stabil untuk AIDE)
+      - name: Setup Java JDK 11
         uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Setup Mesin Gradle (Versi Klasik)
+      - name: Setup Mesin Gradle Klasik
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '6.8.3'
 
-      - name: Tambal Kode AIDE & Build APK
+      - name: Tambal Kode AIDE Secara Paksa (Ultimate)
         run: |
-          cd project_source
-          GRADLE_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
-          cd "$GRADLE_DIR"
+          # Masuk ke folder Curva di dalam zip
+          cd project_source/Curva || cd project_source/*
           
-          # Mencari file build.gradle level App dan Root
-          APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
-          ROOT_GRADLE=$(find . -maxdepth 1 -name "build.gradle")
+          echo "1. Memasang Plugin Google Services di Root..."
+          # Menulis paksa alamat unduh ke file utama
+          cat <<EOF > new_root.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:4.1.0'
+                  classpath 'com.google.gms:google-services:4.3.15'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          if [ -f "build.gradle" ]; then
+              sed -i 's/jcenter()/mavenCentral()/g' build.gradle
+              cat build.gradle >> new_root.gradle
+          fi
+          mv new_root.gradle build.gradle
           
-          if [ -z "$APP_GRADLE" ]; then APP_GRADLE=$ROOT_GRADLE; fi
-
-          echo "1. Menambal compileSdkVersion & minSdkVersion..."
-          # Hapus compileSdkVersion yang lama (jika ada yang formatnya salah)
-          sed -i '/compileSdkVersion/d' $APP_GRADLE
-          # Sisipkan compileSdkVersion 34 tepat di bawah tulisan 'android {'
-          sed -i '/android {/a \    compileSdkVersion 34' $APP_GRADLE
-          # Paksa minSdk menjadi 24
-          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' $APP_GRADLE
+          echo "2. Memasang Versi SDK di App..."
+          APP_GRADLE="app/build.gradle"
+          sed -i 's/jcenter()/mavenCentral()/g' $APP_GRADLE
           
-          echo "2. Menambal Google Services Plugin..."
-          # Tambahkan repo google() agar mesin bisa mengunduh plugin Firebase/Google
-          find . -name "*.gradle" -exec sed -i '/repositories {/a \        google()' {} +
-          # Sisipkan alamat plugin google-services ke root build.gradle
-          if [ -n "$ROOT_GRADLE" ]; then
-            sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.3.15"' $ROOT_GRADLE
+          # Jika compileSdk tidak ada, selipkan tepat di bawah 'android {'
+          if ! grep -q "compileSdkVersion" $APP_GRADLE; then
+              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 34\n/g' $APP_GRADLE
+          fi
+          
+          # Jika blok defaultConfig tidak ada, buat baru untuk minSdk 24
+          if ! grep -q "defaultConfig" $APP_GRADLE; then
+              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 34\n    }\n/g' $APP_GRADLE
+          else
+              # Jika ada, ganti angkanya saja
+              if ! grep -q "minSdkVersion" $APP_GRADLE; then
+                  sed -i -E 's/defaultConfig[[:space:]]*\{/defaultConfig {\n        minSdkVersion 24\n/g' $APP_GRADLE
+              else
+                  sed -i -E 's/minSdkVersion.*/minSdkVersion 24/g' $APP_GRADLE
+              fi
           fi
 
-          echo "3. Mengganti jcenter yang mati menjadi mavenCentral..."
-          find . -name "*.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
-
-          echo "4. Memulai proses build..."
+      - name: Kompilasi APK (Build)
+        run: |
+          cd project_source/Curva || cd project_source/*
           gradle assembleDebug
 
       - name: Upload Hasil APK
         uses: actions/upload-artifact@v4
         with:
           name: APK-Curva-Payment
-          path: project_source/**/build/outputs/apk/debug/*.apk
+          path: project_source/**/app/build/outputs/apk/debug/*.apk
