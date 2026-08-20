@@ -28,11 +28,16 @@ jobs:
         with:
           gradle-version: '6.8.3'
 
-      - name: Tambal Kode AIDE (Target Zona Aman API 32)
+      - name: Tambal Kode Otomatis (Target API 34)
         run: |
           cd project_source/Curva || cd project_source/*
           
-          echo "1. Memasang Plugin Google Services..."
+          echo "1. Memperbaiki Kode Java yang Usang untuk Android 14..."
+          # Mesin akan mencari semua file Java dan menonaktifkan fitur Cache yang sudah dihapus Google
+          find . -name "*.java" -exec sed -i 's/.*setAppCacheEnabled.*/\/\/ &/' {} +
+          find . -name "*.java" -exec sed -i 's/.*setAppCachePath.*/\/\/ &/' {} +
+          
+          echo "2. Memasang Plugin Google Services..."
           cat <<EOF > new_root.gradle
           buildscript {
               repositories {
@@ -57,23 +62,23 @@ jobs:
           fi
           mv new_root.gradle build.gradle
           
-          echo "2. Menimpa Versi SDK menjadi Android 12 (API 32)..."
+          echo "3. Menimpa Versi SDK menjadi Standar Play Store (API 34)..."
           APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
           if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
           sed -i 's/jcenter()/mavenCentral()/g' "$APP_GRADLE"
           
-          # Ubah semua target menjadi 32 (Zona Aman)
-          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 32/g' "$APP_GRADLE"
-          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 32/g' "$APP_GRADLE"
+          # Ubah semua target menjadi 34
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 34/g' "$APP_GRADLE"
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 34/g' "$APP_GRADLE"
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
           
           # Jika barisnya kosong, tambahkan paksa
           if ! grep -q "compileSdkVersion" "$APP_GRADLE"; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 32\n/g' "$APP_GRADLE"
+              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 34\n/g' "$APP_GRADLE"
           fi
           if ! grep -q "minSdkVersion" "$APP_GRADLE"; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 32\n    }\n/g' "$APP_GRADLE"
+              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 34\n    }\n/g' "$APP_GRADLE"
           fi
 
       - name: Kompilasi APK (Build)
@@ -84,5 +89,5 @@ jobs:
       - name: Upload Hasil APK
         uses: actions/upload-artifact@v4
         with:
-          name: APK-Curva-Payment
+          name: APK-Curva-Payment-API34
           path: project_source/**/app/build/outputs/apk/debug/*.apk
