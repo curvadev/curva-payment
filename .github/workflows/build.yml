@@ -17,30 +17,35 @@ jobs:
         run: |
           unzip -q Curva.zip -d project_source
 
-      - name: Setup Java JDK 17
+      # Menggunakan Java 11 karena lebih stabil untuk proyek bawaan AIDE
+      - name: Setup Java JDK 11
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Ubah minSdk & Build APK
+      - name: Perbaiki Kode Lawas & Build APK
         run: |
           cd project_source
           # Mencari letak file build.gradle di dalam zip
           GRADLE_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd $GRADLE_DIR
           
-          # Memaksa minSdk menjadi 24 agar support fitur WebView modern
+          # 1. Memaksa minSdk menjadi 24
           if [ -f "app/build.gradle" ]; then
             sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' app/build.gradle
           else
             sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' build.gradle
           fi
 
-          # Memulai proses build menjadi APK
+          # 2. PERBAIKAN: Ganti jcenter() yang sudah mati menjadi mavenCentral()
+          find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
+          find . -name "settings.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
+
+          # 3. Memulai proses build menjadi APK
           gradle assembleDebug
 
       - name: Upload Hasil APK
