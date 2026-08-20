@@ -17,11 +17,11 @@ jobs:
         run: |
           unzip -q Curva.zip -d project_source
 
-      # Menggunakan Java 11 karena lebih stabil untuk proyek bawaan AIDE
-      - name: Setup Java JDK 11
+      # KEMBALI MENGGUNAKAN JAVA 17 AGAR MESIN GRADLE BISA BERJALAN
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -41,7 +41,7 @@ jobs:
             sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' build.gradle
           fi
 
-          # 2. PERBAIKAN: Ganti jcenter() yang sudah mati menjadi mavenCentral()
+          # 2. Ganti jcenter() yang sudah mati menjadi mavenCentral()
           find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
           find . -name "settings.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
 
