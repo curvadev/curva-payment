@@ -28,20 +28,38 @@ jobs:
         with:
           gradle-version: '6.8.3'
 
-      - name: Perbaiki Kode Lawas & Build APK
+      - name: Tambal Kode AIDE & Build APK
         run: |
           cd project_source
-          # Mencari letak folder utama proyek di dalam zip
           GRADLE_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$GRADLE_DIR"
           
-          echo "Memperbaiki minSdkVersion..."
-          find . -name "build.gradle" -exec sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' {} +
+          # Mencari file build.gradle level App dan Root
+          APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
+          ROOT_GRADLE=$(find . -maxdepth 1 -name "build.gradle")
           
-          echo "Mengganti jcenter menjadi mavenCentral..."
+          if [ -z "$APP_GRADLE" ]; then APP_GRADLE=$ROOT_GRADLE; fi
+
+          echo "1. Menambal compileSdkVersion & minSdkVersion..."
+          # Hapus compileSdkVersion yang lama (jika ada yang formatnya salah)
+          sed -i '/compileSdkVersion/d' $APP_GRADLE
+          # Sisipkan compileSdkVersion 34 tepat di bawah tulisan 'android {'
+          sed -i '/android {/a \    compileSdkVersion 34' $APP_GRADLE
+          # Paksa minSdk menjadi 24
+          sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' $APP_GRADLE
+          
+          echo "2. Menambal Google Services Plugin..."
+          # Tambahkan repo google() agar mesin bisa mengunduh plugin Firebase/Google
+          find . -name "*.gradle" -exec sed -i '/repositories {/a \        google()' {} +
+          # Sisipkan alamat plugin google-services ke root build.gradle
+          if [ -n "$ROOT_GRADLE" ]; then
+            sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.3.15"' $ROOT_GRADLE
+          fi
+
+          echo "3. Mengganti jcenter yang mati menjadi mavenCentral..."
           find . -name "*.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} +
 
-          echo "Memulai proses build..."
+          echo "4. Memulai proses build..."
           gradle assembleDebug
 
       - name: Upload Hasil APK
