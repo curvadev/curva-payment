@@ -1,0 +1,50 @@
+name: Build APK dari ZIP
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ambil File dari Repo
+        uses: actions/checkout@v4
+
+      - name: Ekstrak File ZIP
+        run: |
+          unzip -q Curva.zip -d project_source
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Ubah minSdk & Build APK
+        run: |
+          cd project_source
+          # Mencari letak file build.gradle di dalam zip
+          GRADLE_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
+          cd $GRADLE_DIR
+          
+          # Memaksa minSdk menjadi 24 agar support fitur WebView modern
+          if [ -f "app/build.gradle" ]; then
+            sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' app/build.gradle
+          else
+            sed -i 's/minSdkVersion [0-9]*/minSdkVersion 24/g' build.gradle
+          fi
+
+          # Memulai proses build menjadi APK
+          gradle assembleDebug
+
+      - name: Upload Hasil APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-Curva-Payment
+          path: project_source/**/build/outputs/apk/debug/*.apk
