@@ -46,8 +46,8 @@ jobs:
           if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
           sed -i 's/jcenter()/mavenCentral()/g' "$APP_GRADLE"
-          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/g' "$APP_GRADLE"
-          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/g' "$APP_GRADLE"
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 33/g' "$APP_GRADLE"
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 34/g' "$APP_GRADLE"
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
 
       - name: Build APK dan AAB Release
