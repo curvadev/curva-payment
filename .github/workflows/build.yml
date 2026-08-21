@@ -41,13 +41,13 @@ jobs:
           if [ -f "build.gradle" ]; then sed -i 's/jcenter()/mavenCentral()/g' build.gradle; cat build.gradle >> new_root.gradle; fi
           mv new_root.gradle build.gradle
           
-          echo "3. Trik Play Store (Compile 33, Target 34)..."
+                    echo "3. Trik Play Store (Compile 36, Target 36)..."
           APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
           if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
           sed -i 's/jcenter()/mavenCentral()/g' "$APP_GRADLE"
-          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 33/g' "$APP_GRADLE"
-          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 34/g' "$APP_GRADLE"
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/g' "$APP_GRADLE"
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/g' "$APP_GRADLE"
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
 
       - name: Build APK dan AAB Release
