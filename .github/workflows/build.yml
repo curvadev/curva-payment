@@ -52,31 +52,26 @@ jobs:
 
       - name: Build APK dan AAB Release
         run: |
-          # Langsung build dari kode sumber di GitHub
           gradle assembleRelease bundleRelease
 
-      - name: Buat Keystore Otomatis & Tandatangani (Sign)
+      - name: Tandatangani (Sign) dengan Kunci Tetap
         run: |
-          echo "1. Membuat Kunci Keystore Baru..."
-          keytool -genkey -v -keystore release.keystore -alias curva_alias -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Curva Payment, OU=Developer, O=Curva, L=Indonesia, S=Indonesia, C=ID" -storepass "curvapayment123" -keypass "curvapayment123"
-          
-          echo "2. Mencari Alat Penandatangan (apksigner)..."
+          echo "1. Mencari Alat Penandatangan (apksigner)..."
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_SDK_ROOT/build-tools/* | tail -1)
           APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
           
-          echo "3. Mencari file APK dan AAB mentah..."
+          echo "2. Mencari file APK dan AAB mentah..."
           APK_FILE=$(find . -name "*-unsigned.apk" | head -n 1)
           AAB_FILE=$(find . -name "*.aab" | head -n 1)
           
-          echo "4. Menandatangani APK & AAB..."
-          $APKSIGNER sign --ks release.keystore --ks-pass pass:curvapayment123 --key-pass pass:curvapayment123 --ks-key-alias curva_alias "$APK_FILE"
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass curvapayment123 -keypass curvapayment123 "$AAB_FILE" curva_alias
+          echo "3. Menandatangani menggunakan Kunci Master..."
+          $APKSIGNER sign --ks KUNCI-RAHASIA.keystore --ks-pass pass:curvapayment123 --key-pass pass:curvapayment123 --ks-key-alias curva_alias "$APK_FILE"
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore KUNCI-RAHASIA.keystore -storepass curvapayment123 -keypass curvapayment123 "$AAB_FILE" curva_alias
           
-          echo "5. Mengumpulkan hasil ke satu folder..."
+          echo "4. Mengumpulkan hasil..."
           mkdir -p Hasil_Siap_Publish
           cp "$APK_FILE" Hasil_Siap_Publish/CurvaPayment-API34.apk
           cp "$AAB_FILE" Hasil_Siap_Publish/CurvaPayment-API34.aab
-          cp release.keystore Hasil_Siap_Publish/KUNCI-RAHASIA.keystore
 
       - name: Download Hasil Akhir
         uses: actions/upload-artifact@v4
