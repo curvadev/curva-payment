@@ -1,4 +1,4 @@
-name: Build APK Stabil (APK Edition)
+name: Build APK Stabil (API 33 Edition)
 
 on:
   push:
@@ -32,11 +32,11 @@ jobs:
         run: |
           cd project_source/Curva || cd project_source/*
           
-          # 1. Membersihkan kode Cache yang bikin error
+          # 1. Membersihkan kode Cache
           find . -name "*.java" -exec sed -i 's/.*setAppCacheEnabled.*/\/\/ &/' {} +
           find . -name "*.java" -exec sed -i 's/.*setAppCachePath.*/\/\/ &/' {} +
           
-          # 2. Setup Repo (Google & MavenCentral)
+          # 2. Setup Repo
           cat <<EOF > new_root.gradle
           buildscript {
               repositories {
@@ -61,7 +61,7 @@ jobs:
           fi
           mv new_root.gradle build.gradle
           
-          # 3. Setting SDK ke 33 (Zona Paling Stabil)
+          # 3. Setting SDK ke 33
           APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
           if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
@@ -70,11 +70,11 @@ jobs:
           sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 33/g' "$APP_GRADLE"
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
           
-          # 4. Build APK Release
-          gradle assembleRelease
+          # 4. KEMBALI KE DEBUG AGAR OTOMATIS DITANDATANGANI DAN BISA DIINSTAL
+          gradle assembleDebug
 
       - name: Upload APK Hasil
         uses: actions/upload-artifact@v4
         with:
-          name: App-Curva-Payment-Release
-          path: project_source/**/app/build/outputs/apk/release/*.apk
+          name: App-Curva-Payment-API33
+          path: project_source/**/app/build/outputs/apk/debug/*.apk
