@@ -1,4 +1,4 @@
-name: Build Release Final (API 34 + AAB + Signed)
+name: Build Release Final (Murni GitHub)
 
 on:
   push:
@@ -10,12 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ambil File dari Repo
+      - name: Ambil Kode Murni dari Repo
         uses: actions/checkout@v4
-
-      - name: Ekstrak File ZIP
-        run: |
-          unzip -q Curva.zip -d project_source
 
       - name: Setup Java JDK 11
         uses: actions/setup-java@v4
@@ -30,8 +26,6 @@ jobs:
 
       - name: Tambal Kode & Trik API 34 Play Store
         run: |
-          cd project_source/Curva || cd project_source/*
-          
           echo "1. Mematikan kode usang Android 14..."
           find . -name "*.java" -exec sed -i 's/.*setAppCacheEnabled.*/\/\/ &/' {} +
           find . -name "*.java" -exec sed -i 's/.*setAppCachePath.*/\/\/ &/' {} +
@@ -58,14 +52,11 @@ jobs:
 
       - name: Build APK dan AAB Release
         run: |
-          cd project_source/Curva || cd project_source/*
-          # Perintah ini akan menghasilkan dua format sekaligus
+          # Langsung build dari kode sumber di GitHub
           gradle assembleRelease bundleRelease
 
       - name: Buat Keystore Otomatis & Tandatangani (Sign)
         run: |
-          cd project_source/Curva || cd project_source/*
-          
           echo "1. Membuat Kunci Keystore Baru..."
           keytool -genkey -v -keystore release.keystore -alias curva_alias -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Curva Payment, OU=Developer, O=Curva, L=Indonesia, S=Indonesia, C=ID" -storepass "curvapayment123" -keypass "curvapayment123"
           
@@ -82,10 +73,10 @@ jobs:
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore release.keystore -storepass curvapayment123 -keypass curvapayment123 "$AAB_FILE" curva_alias
           
           echo "5. Mengumpulkan hasil ke satu folder..."
-          mkdir -p ../../Hasil_Siap_Publish
-          cp "$APK_FILE" ../../Hasil_Siap_Publish/CurvaPayment-API34.apk
-          cp "$AAB_FILE" ../../Hasil_Siap_Publish/CurvaPayment-API34.aab
-          cp release.keystore ../../Hasil_Siap_Publish/KUNCI-RAHASIA.keystore
+          mkdir -p Hasil_Siap_Publish
+          cp "$APK_FILE" Hasil_Siap_Publish/CurvaPayment-API34.apk
+          cp "$AAB_FILE" Hasil_Siap_Publish/CurvaPayment-API34.aab
+          cp release.keystore Hasil_Siap_Publish/KUNCI-RAHASIA.keystore
 
       - name: Download Hasil Akhir
         uses: actions/upload-artifact@v4
