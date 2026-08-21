@@ -10,7 +10,7 @@ android {
         minSdkVersion 19  // KITA KEMBALI KE 19
         targetSdkVersion 28
         versionCode 5     // NANTI JANGAN LUPA DIUBAH JIKA INGIN TES POPUP
-        versionName "5.3.0"
+        versionName "5.6.1"
     }
 
     buildTypes {
