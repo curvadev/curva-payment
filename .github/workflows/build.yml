@@ -1,4 +1,4 @@
-name: Build APK dari ZIP
+name: Build APK Stabil (APK Edition)
 
 on:
   push:
@@ -28,16 +28,15 @@ jobs:
         with:
           gradle-version: '6.8.3'
 
-      - name: Tambal Kode Otomatis (Target API 34)
+      - name: Tambal Kode & Build APK
         run: |
           cd project_source/Curva || cd project_source/*
           
-          echo "1. Memperbaiki Kode Java yang Usang untuk Android 14..."
-          # Mesin akan mencari semua file Java dan menonaktifkan fitur Cache yang sudah dihapus Google
+          # 1. Membersihkan kode Cache yang bikin error
           find . -name "*.java" -exec sed -i 's/.*setAppCacheEnabled.*/\/\/ &/' {} +
           find . -name "*.java" -exec sed -i 's/.*setAppCachePath.*/\/\/ &/' {} +
           
-          echo "2. Memasang Plugin Google Services..."
+          # 2. Setup Repo (Google & MavenCentral)
           cat <<EOF > new_root.gradle
           buildscript {
               repositories {
@@ -62,32 +61,20 @@ jobs:
           fi
           mv new_root.gradle build.gradle
           
-          echo "3. Menimpa Versi SDK menjadi Standar Play Store (API 34)..."
+          # 3. Setting SDK ke 33 (Zona Paling Stabil)
           APP_GRADLE=$(find . -name "build.gradle" | grep -i "app" | head -n 1)
           if [ -z "$APP_GRADLE" ]; then APP_GRADLE="build.gradle"; fi
           
           sed -i 's/jcenter()/mavenCentral()/g' "$APP_GRADLE"
-          
-          # Ubah semua target menjadi 34
-          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 34/g' "$APP_GRADLE"
-          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 34/g' "$APP_GRADLE"
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 33/g' "$APP_GRADLE"
+          sed -i -E 's/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 33/g' "$APP_GRADLE"
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g' "$APP_GRADLE"
           
-          # Jika barisnya kosong, tambahkan paksa
-          if ! grep -q "compileSdkVersion" "$APP_GRADLE"; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    compileSdkVersion 34\n/g' "$APP_GRADLE"
-          fi
-          if ! grep -q "minSdkVersion" "$APP_GRADLE"; then
-              sed -i -E 's/android[[:space:]]*\{/android {\n    defaultConfig {\n        minSdkVersion 24\n        targetSdkVersion 34\n    }\n/g' "$APP_GRADLE"
-          fi
+          # 4. Build APK Release
+          gradle assembleRelease
 
-      - name: Kompilasi APK (Build)
-        run: |
-          cd project_source/Curva || cd project_source/*
-          gradle assembleDebug
-
-      - name: Upload Hasil APK
+      - name: Upload APK Hasil
         uses: actions/upload-artifact@v4
         with:
-          name: APK-Curva-Payment-API34
-          path: project_source/**/app/build/outputs/apk/debug/*.apk
+          name: App-Curva-Payment-Release
+          path: project_source/**/app/build/outputs/apk/release/*.apk
