@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "367207430437",
+    "project_id": "curva-ppob",
+    "storage_bucket": "curva-ppob.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367207430437:android:dfb7751159303b98f602cc",
+        "android_client_info": {
+          "package_name": "com.curva.ppob"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChFPFQyYZXgZGc6Hja_R9p02wuSDecqys"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
